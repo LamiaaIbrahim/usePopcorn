@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
   {
@@ -49,10 +49,32 @@ const tempWatchedData = [
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
-
+const KEY = "241491a1";
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
+  const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState(tempWatchedData);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(function () {
+    async function fetchMovies() {
+      try {
+        setIsLoading(true);
+
+        const res = await fetch(
+          `https://www.omdbapi.com/?s=Interstellar&apikey=${KEY}`
+        );
+        if (!res.ok) {
+          throw new Error("Could not retrieve movies");
+        }
+        const data = await res.json();
+        setMovies(data.Search);
+        setIsLoading(false);
+      } catch (err) {
+        console.error(err.message);
+      }
+    }
+    fetchMovies();
+  }, []);
 
   return (
     <>
@@ -63,7 +85,7 @@ export default function App() {
 
       <Main>
         <Box>
-          <MovieList movies={movies} />
+          <MovieList isLoading={isLoading} movies={movies} />
         </Box>
 
         <Box>
@@ -158,12 +180,14 @@ function WatchedBox() {
 }
 */
 
-function MovieList({ movies }) {
+function MovieList({ movies, isLoading }) {
   return (
     <ul className="list">
-      {movies?.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID} />
-      ))}
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        movies?.map((movie) => <Movie movie={movie} key={movie.imdbID} />)
+      )}
     </ul>
   );
 }
